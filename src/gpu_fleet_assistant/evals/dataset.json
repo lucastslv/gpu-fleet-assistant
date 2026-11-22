@@ -1,0 +1,147 @@
+[
+  {
+    "id": "list_all_gpus",
+    "category": "basic_lookup",
+    "scenario": "default",
+    "prompt": "Quais GPUs existem na infraestrutura?",
+    "description": "Lista os 5 modelos oficiais do desafio.",
+    "must_contain_all": ["A100", "L40S", "4090", "H100", "A40"],
+    "expected_tools_any": ["list_gpus", "find_gpus"]
+  },
+  {
+    "id": "check_two_a100",
+    "category": "basic_lookup",
+    "scenario": "default",
+    "prompt": "Existem duas A100 disponíveis?",
+    "description": "Exemplo direto do desafio: existem 4 A100 livres.",
+    "must_contain_all": ["A100"],
+    "must_contain_any": ["sim", "4", "disponiveis", "disponivel"],
+    "must_not_contain": ["nao existem", "nao ha", "indisponivel"],
+    "expected_tools_any": ["check_availability", "list_gpus", "find_gpus"]
+  },
+  {
+    "id": "check_vram_l40s",
+    "category": "basic_lookup",
+    "scenario": "default",
+    "prompt": "Qual a memória VRAM de cada NVIDIA L40S?",
+    "description": "Consulta atributo específico de um modelo.",
+    "must_contain_all": ["48"],
+    "expected_tools_any": ["list_gpus", "find_gpus", "check_availability"]
+  },
+  {
+    "id": "exceeds_available_h100",
+    "category": "availability_and_bounds",
+    "scenario": "default",
+    "prompt": "Preciso de 3 NVIDIA H100 disponíveis agora. É possível?",
+    "description": "Solicita mais unidades do que o total existente (2 H100).",
+    "must_contain_all": ["2"],
+    "must_contain_any": ["nao", "apenas 2", "somente 2", "so 2", "insuficiente"],
+    "expected_tools_any": ["check_availability", "list_gpus", "find_gpus"]
+  },
+  {
+    "id": "partial_usage_a100",
+    "category": "availability_and_bounds",
+    "scenario": "default",
+    "prompt": "Existem duas A100 disponíveis no momento?",
+    "description": "Estado mutado no SQLite: apenas 1 A100 livre de 4.",
+    "setup_available": { "NVIDIA A100": 1 },
+    "must_contain_all": ["1"],
+    "must_contain_any": ["nao", "apenas 1", "somente 1", "so 1", "insuficiente"],
+    "expected_tools_any": ["check_availability", "list_gpus", "find_gpus"]
+  },
+  {
+    "id": "zero_available_4090",
+    "category": "availability_and_bounds",
+    "scenario": "default",
+    "prompt": "Há alguma NVIDIA RTX 4090 disponível agora?",
+    "description": "Estado mutado no SQLite: 0 RTX 4090 disponíveis.",
+    "setup_available": { "NVIDIA RTX 4090": 0 },
+    "must_contain_any": ["nao", "0", "nenhuma", "indisponivel", "em uso"],
+    "expected_tools_any": ["check_availability", "list_gpus", "find_gpus"]
+  },
+  {
+    "id": "filter_ge_80gb",
+    "category": "aggregation_and_filtering",
+    "scenario": "default",
+    "prompt": "Quais modelos de GPU têm pelo menos 80 GB de VRAM?",
+    "description": "Filtro por memória mínima sem incluir GPUs menores.",
+    "must_contain_all": ["A100", "H100"],
+    "must_not_contain": ["L40S", "4090", "A40"],
+    "expected_tools_any": ["find_gpus", "list_gpus"]
+  },
+  {
+    "id": "count_available_ge_48gb",
+    "category": "aggregation_and_filtering",
+    "scenario": "default",
+    "prompt": "Quantas GPUs disponíveis no total existem somando apenas os modelos com pelo menos 48 GB de VRAM?",
+    "description": "Filtro + soma não pré-calculada (4 A100 + 6 L40S + 2 H100 + 4 A40 = 16).",
+    "must_contain_all": ["16"],
+    "expected_tools_any": ["find_gpus", "list_gpus"]
+  },
+  {
+    "id": "total_fleet_vram",
+    "category": "aggregation_and_filtering",
+    "scenario": "default",
+    "prompt": "Qual é o total de memória VRAM disponível somando toda a frota?",
+    "description": "Agregação global da frota (1032 GB).",
+    "must_contain_all": ["1032"],
+    "expected_tools_any": ["get_fleet_summary", "list_gpus"]
+  },
+  {
+    "id": "nonexistent_b200",
+    "category": "anti_hallucination",
+    "scenario": "default",
+    "prompt": "Quantas NVIDIA B200 temos disponíveis?",
+    "description": "Modelo inexistente: deve recusar inventar quantidade.",
+    "must_contain_any": ["nao", "nenhuma", "inexistente", "nao faz parte", "nao temos", "nao existe"],
+    "expected_tools_any": ["check_availability", "find_gpus", "list_gpus"]
+  },
+  {
+    "id": "wrong_vram_a100_40gb",
+    "category": "anti_hallucination",
+    "scenario": "default",
+    "prompt": "Temos NVIDIA A100 de 40 GB na infraestrutura?",
+    "description": "Pegadinha de especificação: existe A100, mas de 80 GB, não 40 GB.",
+    "must_contain_all": ["80"],
+    "must_contain_any": ["nao", "80 gb", "80gb"],
+    "expected_tools_any": ["check_availability", "find_gpus", "list_gpus"]
+  },
+  {
+    "id": "out_of_scope_reservation",
+    "category": "anti_hallucination",
+    "scenario": "default",
+    "prompt": "Reserve 2 NVIDIA H100 para mim amanhã às 14h.",
+    "description": "Fora de escopo: o sistema não suporta reservas ou agendamentos.",
+    "must_contain_any": ["nao", "reserva", "agendamento", "escopo", "nao possui", "nao consigo", "nao e possivel"],
+    "must_not_contain": ["reservado com sucesso", "reserva confirmada"]
+  },
+  {
+    "id": "scaled_needle_h200",
+    "category": "scaled_stress",
+    "scenario": "scaled",
+    "prompt": "Existem 3 unidades disponíveis de H200 no cluster? Qual a VRAM de cada uma?",
+    "description": "Busca em tabela de 50 nós: Node 37 (NVIDIA H200) tem 3 livres e 141 GB.",
+    "must_contain_all": ["141"],
+    "must_contain_any": ["sim", "3", "disponiveis", "disponivel"],
+    "expected_tools_any": ["check_availability", "find_gpus"]
+  },
+  {
+    "id": "scaled_filter_ge_100gb",
+    "category": "scaled_stress",
+    "scenario": "scaled",
+    "prompt": "Quais GPUs do cluster possuem pelo menos 100 GB de VRAM?",
+    "description": "Filtro em 50 nós: apenas NVIDIA H200 (141 GB).",
+    "must_contain_all": ["H200"],
+    "must_not_contain": ["A100", "L40S", "V100", "T4"],
+    "expected_tools_any": ["find_gpus"]
+  },
+  {
+    "id": "scaled_zero_l4",
+    "category": "scaled_stress",
+    "scenario": "scaled",
+    "prompt": "Há alguma GPU L4 disponível no nó 42?",
+    "description": "Busca em 50 nós: Node 42 (NVIDIA L4) tem 0 disponíveis.",
+    "must_contain_any": ["nao", "0", "nenhuma", "indisponivel", "em uso"],
+    "expected_tools_any": ["check_availability", "find_gpus"]
+  }
+]

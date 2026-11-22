@@ -19,7 +19,13 @@ const els = {
   chatForm: document.getElementById("chat-form"),
   messageInput: document.getElementById("message-input"),
   sendBtn: document.getElementById("send-btn"),
+  themeToggleBtn: document.getElementById("theme-toggle-btn"),
+  themeIcon: document.getElementById("theme-icon"),
+  themeLabel: document.getElementById("theme-label"),
 };
+
+const SUN_ICON = `<svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path></svg>`;
+const MOON_ICON = `<svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`;
 
 function escapeHtml(text) {
   return String(text)
@@ -248,7 +254,7 @@ async function sendMessage(text) {
   if (state.busy || !text.trim()) return;
   state.busy = true;
   els.sendBtn.disabled = true;
-  els.sendBtn.textContent = "Consultando...";
+  els.sendBtn.classList.add("is-loading");
 
   appendUserMessage(text);
   els.messageInput.value = "";
@@ -282,7 +288,7 @@ async function sendMessage(text) {
   } finally {
     state.busy = false;
     els.sendBtn.disabled = false;
-    els.sendBtn.textContent = "Enviar";
+    els.sendBtn.classList.remove("is-loading");
     els.messageInput.focus();
   }
 }
@@ -312,6 +318,26 @@ els.clearChatBtn.addEventListener("click", () => {
   els.messages.appendChild(els.emptyState);
   els.emptyState.style.display = "block";
 });
+
+function applyTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  if (els.themeLabel) {
+    els.themeLabel.textContent = theme === "light" ? "Tema escuro" : "Tema claro";
+  }
+  if (els.themeIcon) {
+    els.themeIcon.innerHTML = theme === "light" ? MOON_ICON : SUN_ICON;
+  }
+  localStorage.setItem("gpu-fleet-theme", theme);
+}
+
+if (els.themeToggleBtn) {
+  const savedTheme = localStorage.getItem("gpu-fleet-theme") || "dark";
+  applyTheme(savedTheme);
+  els.themeToggleBtn.addEventListener("click", () => {
+    const next = document.documentElement.dataset.theme === "light" ? "dark" : "light";
+    applyTheme(next);
+  });
+}
 
 Promise.all([fetchConfig(), fetchFleet()]).catch((err) => {
   appendErrorMessage(`Falha ao carregar dados iniciais: ${err.message}`);

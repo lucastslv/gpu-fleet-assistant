@@ -4,15 +4,21 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>GPU Fleet Assistant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Source+Sans+3:wght@400;600;700&display=swap"
+    rel="stylesheet"
+  />
   <link rel="stylesheet" href="/static/styles.css" />
 </head>
 <body>
   <header class="topbar">
     <div class="brand">
-      <div class="brand-dot" aria-hidden="true"></div>
+      <div class="brand-mark" aria-hidden="true">GPU</div>
       <div>
         <h1>GPU Fleet Assistant</h1>
-        <p class="subtitle">Consulta conversacional de infraestrutura · SQLite + Tool Calling vs. Prompt Stuffing</p>
+        <p class="subtitle">Consulta conversacional de infraestrutura</p>
       </div>
     </div>
 
@@ -34,14 +40,30 @@
         <span>Modelo (opcional)</span>
         <input id="model-input" type="text" placeholder="padrão do .env" />
       </label>
+
+      <button id="theme-toggle-btn" class="theme-btn" type="button" title="Alternar tema claro/escuro">
+        <span class="btn-icon" id="theme-icon" aria-hidden="true"></span>
+        <span id="theme-label">Tema claro</span>
+      </button>
     </div>
   </header>
 
   <main class="layout">
     <aside class="fleet-panel" aria-label="Painel da frota de GPUs">
       <div class="panel-header">
-        <h2>Frota SQLite (tempo real)</h2>
+        <h2 class="heading-with-icon">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="4" y="4" width="16" height="16" rx="2"></rect>
+            <rect x="9" y="9" width="6" height="6"></rect>
+            <path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"></path>
+          </svg>
+          Frota SQLite (tempo real)
+        </h2>
         <button id="reset-fleet-btn" class="btn-secondary" type="button" title="Restaurar todas as GPUs para 100% disponíveis">
+          <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 12a9 9 0 1 0 3-6.7L3 8"></path>
+            <path d="M3 3v5h5"></path>
+          </svg>
           Resetar frota
         </button>
       </div>
@@ -66,8 +88,20 @@
 
     <section class="chat-panel" aria-label="Chat com o assistente">
       <div class="panel-header">
-        <h2>Assistente Conversacional</h2>
-        <button id="clear-chat-btn" class="btn-secondary" type="button">Limpar conversa</button>
+        <h2 class="heading-with-icon">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+          </svg>
+          Assistente Conversacional
+        </h2>
+        <button id="clear-chat-btn" class="btn-secondary" type="button">
+          <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 6h18"></path>
+            <path d="M8 6V4h8v2"></path>
+            <path d="M19 6l-1 14H6L5 6"></path>
+          </svg>
+          Limpar conversa
+        </button>
       </div>
 
       <div class="suggestions" id="suggestions">
@@ -92,7 +126,16 @@
           autocomplete="off"
           required
         />
-        <button id="send-btn" class="btn-primary" type="submit">Enviar</button>
+        <button id="send-btn" class="btn-primary" type="submit" aria-label="Enviar mensagem">
+          <svg class="icon icon-send" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M22 2L11 13"></path>
+            <path d="M22 2L15 22L11 13L2 9L22 2Z"></path>
+          </svg>
+          <span class="typing-dots" aria-hidden="true">
+            <span></span><span></span><span></span>
+          </span>
+          <span class="send-label">Enviar</span>
+        </button>
       </form>
     </section>
   </main>

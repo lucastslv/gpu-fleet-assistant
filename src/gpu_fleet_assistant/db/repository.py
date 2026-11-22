@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sqlite3
+import threading
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Iterator
@@ -24,6 +25,7 @@ class GPURepository:
 
     def __init__(self, db_path: str | Path = "data/gpu_fleet.db") -> None:
         self.db_path = Path(db_path) if str(db_path) != ":memory:" else db_path
+        self._memory_lock = threading.Lock()
         self._memory_conn: sqlite3.Connection | None = (
             connect(":memory:") if str(db_path) == ":memory:" else None
         )
@@ -31,7 +33,8 @@ class GPURepository:
     @contextmanager
     def _connection(self) -> Iterator[sqlite3.Connection]:
         if self._memory_conn is not None:
-            yield self._memory_conn
+            with self._memory_lock:
+                yield self._memory_conn
             return
 
         conn = connect(self.db_path)

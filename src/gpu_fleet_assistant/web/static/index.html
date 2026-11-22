@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GPU Fleet Assistant</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-dot" aria-hidden="true"></div>
+      <div>
+        <h1>GPU Fleet Assistant</h1>
+        <p class="subtitle">Consulta conversacional de infraestrutura · SQLite + Tool Calling vs. Prompt Stuffing</p>
+      </div>
+    </div>
+
+    <div class="controls" aria-label="Configurações do assistente">
+      <label class="control">
+        <span>Estratégia</span>
+        <select id="strategy-select">
+          <option value="tool_calling">tool_calling (principal)</option>
+          <option value="prompt_stuffing">prompt_stuffing (baseline)</option>
+        </select>
+      </label>
+
+      <label class="control">
+        <span>Provider</span>
+        <select id="provider-select"></select>
+      </label>
+
+      <label class="control">
+        <span>Modelo (opcional)</span>
+        <input id="model-input" type="text" placeholder="padrão do .env" />
+      </label>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="fleet-panel" aria-label="Painel da frota de GPUs">
+      <div class="panel-header">
+        <h2>Frota SQLite (tempo real)</h2>
+        <button id="reset-fleet-btn" class="btn-secondary" type="button" title="Restaurar todas as GPUs para 100% disponíveis">
+          Resetar frota
+        </button>
+      </div>
+
+      <div class="kpi-grid" id="kpi-grid">
+        <div class="kpi-card">
+          <span class="kpi-label">GPUs disponíveis</span>
+          <strong class="kpi-value" id="kpi-gpus">—</strong>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">VRAM disponível</span>
+          <strong class="kpi-value" id="kpi-vram">—</strong>
+        </div>
+      </div>
+
+      <p class="panel-hint">
+        Use <code>−</code> / <code>+</code> para simular GPUs em uso no SQLite e testar a resposta do assistente ao vivo.
+      </p>
+
+      <div class="gpu-list" id="gpu-list"></div>
+    </aside>
+
+    <section class="chat-panel" aria-label="Chat com o assistente">
+      <div class="panel-header">
+        <h2>Assistente Conversacional</h2>
+        <button id="clear-chat-btn" class="btn-secondary" type="button">Limpar conversa</button>
+      </div>
+
+      <div class="suggestions" id="suggestions">
+        <button type="button" class="chip" data-prompt="Quais GPUs existem na infraestrutura?">Quais GPUs existem?</button>
+        <button type="button" class="chip" data-prompt="Existem duas A100 disponíveis?">Existem 2 A100?</button>
+        <button type="button" class="chip" data-prompt="Quais modelos de GPU têm pelo menos 80 GB de VRAM?">GPUs ≥ 80 GB</button>
+        <button type="button" class="chip" data-prompt="Qual é o total de memória VRAM disponível na frota?">VRAM total</button>
+        <button type="button" class="chip" data-prompt="Quantas NVIDIA B200 temos disponíveis?">Teste anti-alucinação (B200)</button>
+      </div>
+
+      <div class="messages" id="messages" aria-live="polite">
+        <div class="empty-state" id="empty-state">
+          Faça uma pergunta sobre a frota de GPUs ou clique em uma sugestão acima.
+        </div>
+      </div>
+
+      <form class="composer" id="chat-form">
+        <input
+          id="message-input"
+          type="text"
+          placeholder="Pergunte sobre modelos, disponibilidade ou VRAM..."
+          autocomplete="off"
+          required
+        />
+        <button id="send-btn" class="btn-primary" type="submit">Enviar</button>
+      </form>
+    </section>
+  </main>
+
+  <script src="/static/app.js" defer></script>
+</body>
+</html>

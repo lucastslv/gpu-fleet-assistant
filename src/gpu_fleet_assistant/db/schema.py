@@ -27,9 +27,10 @@ SEED_GPUS: tuple[tuple[str, int, int], ...] = (
 
 def connect(db_path: str | Path) -> sqlite3.Connection:
     """Open a SQLite connection configured with Row factory and foreign keys."""
-    if str(db_path) != ":memory:":
+    is_memory = str(db_path) == ":memory:"
+    if not is_memory:
         Path(db_path).parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(str(db_path))
+    conn = sqlite3.connect(str(db_path), check_same_thread=not is_memory)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON;")
     return conn

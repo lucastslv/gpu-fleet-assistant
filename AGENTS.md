@@ -46,11 +46,14 @@ src/gpu_fleet_assistant/
 │   ├── base.py                # AssistantStrategy, ChatMessage, ToolCallTrace, AssistantResponse
 │   ├── prompt_stuffing.py     # Baseline: snapshot do SQLite no system prompt
 │   └── tool_calling.py        # Principal: tools tipadas de leitura sobre GPURepository + loop controlado
-└── evals/
-    ├── dataset.json           # 15 casos (12 frota padrão + 3 estresse com 50 nós)
-    ├── dataset.py             # Loader de casos + seed de estresse em memória
-    ├── evaluator.py           # Scoring determinístico, agregação e relatório Markdown
-    └── runner.py              # CLI `uv run gpu-fleet-eval`
+├── evals/
+│   ├── dataset.json           # 15 casos (12 frota padrão + 3 estresse com 50 nós)
+│   ├── dataset.py             # Loader de casos + seed de estresse em memória
+│   ├── evaluator.py           # Scoring determinístico, agregação e relatório Markdown
+│   └── runner.py              # CLI `uv run gpu-fleet-eval`
+└── web/
+    ├── app.py                 # FastAPI (`/api/gpus`, `/api/chat`, `/api/config`) + `uv run gpu-fleet-web`
+    └── static/                # Frontend HTML/CSS/JS puro (painel SQLite + chat + inspetor de tools)
 ```
 
 **Progresso:**
@@ -58,7 +61,8 @@ src/gpu_fleet_assistant/
 - [x] **Passo 2**: Configuração multi-provider + `OpenAICompatibleClient` + `PromptStuffingStrategy` + CLI interativa + testes (`tests/test_config.py`, `tests/test_prompt_stuffing.py`).
 - [x] **Passo 3**: `ToolCallingStrategy` (schemas JSON/tools tipadas sobre `GPURepository` + loop controlado de execução + `--strategy tool_calling` na CLI + testes mockados em `tests/test_tool_calling.py`).
 - [x] **Passo 4**: Suite de `evals/` (`dataset.json`, `evaluator.py`, `runner.py` / `uv run gpu-fleet-eval`, testes em `tests/test_evals.py`) comparando `prompt_stuffing` vs. `tool_calling` nos cenários padrão (5 GPUs) e escalado (50 nós).
-- [ ] **Passo 5**: Frontend em **FastAPI + HTML/CSS/JS** (seletor de estratégia/provider, painel de GPUs, inspeção das *tool calls*) + `README.md` final.
+- [x] **Passo 5 (UI)**: Frontend em **FastAPI + HTML/CSS/JS** (`web/`, `uv run gpu-fleet-web`, testes em `tests/test_web.py`).
+- [ ] **Passo 5 (Docs)**: `README.md` final com arquitetura, decisões técnicas, instruções e resultados empíricos dos evals.
 
 ## Comandos Úteis
 
@@ -67,11 +71,20 @@ src/gpu_fleet_assistant/
   ```bash
   uv run pytest -v
   ```
+- Rodar interface web (FastAPI + HTML/CSS/JS):
+  ```bash
+  uv run gpu-fleet-web
+  ```
 - Rodar CLI interativa:
   ```bash
   uv run gpu-fleet-assistant
   uv run gpu-fleet-assistant --provider deepseek
   uv run gpu-fleet-assistant --provider ollama --model qwen2.5:7b
+  ```
+- Rodar suite comparativa de evals:
+  ```bash
+  uv run gpu-fleet-eval --provider deepseek --scenario all
+  uv run gpu-fleet-eval --provider ollama --model llama3.2:3b --scenario all
   ```
 - Configuração local: copiar `.env.example` para `.env`.
 

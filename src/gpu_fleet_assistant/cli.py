@@ -10,6 +10,7 @@ from gpu_fleet_assistant.strategies import (
     AssistantStrategy,
     ChatMessage,
     PromptStuffingStrategy,
+    ToolCallingStrategy,
 )
 
 
@@ -18,6 +19,8 @@ def _build_strategy(
     repository: GPURepository,
     client: OpenAICompatibleClient,
 ) -> AssistantStrategy:
+    if strategy_name == "tool_calling":
+        return ToolCallingStrategy(repository, client)
     if strategy_name == "prompt_stuffing":
         return PromptStuffingStrategy(repository, client)
     raise ValueError(f"Unsupported strategy: {strategy_name!r}")
@@ -41,9 +44,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--strategy",
-        choices=("prompt_stuffing",),
-        default="prompt_stuffing",
-        help="Assistant strategy to use.",
+        choices=("tool_calling", "prompt_stuffing"),
+        default="tool_calling",
+        help="Assistant strategy to use (default: tool_calling).",
     )
     return parser
 
@@ -90,6 +93,11 @@ def main(argv: list[str] | None = None) -> None:
             continue
 
         print(f"\nAssistente: {response.answer}")
+        if response.tool_calls:
+            formatted_tools = ", ".join(
+                f"{tc.name}({tc.arguments})" for tc in response.tool_calls
+            )
+            print(f"  [tools: {formatted_tools}]")
         print(
             f"  [strategy={response.strategy} | model={response.model} | "
             f"calls={response.llm_calls} | {response.latency_ms:.0f}ms | "

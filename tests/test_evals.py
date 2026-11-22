@@ -104,6 +104,10 @@ def test_build_repository_for_scaled_and_mutated_cases() -> None:
 
 def test_score_answer_handles_accents_and_forbidden_terms() -> None:
     assert normalize_text("Não há GPUs disponíveis!") == "nao ha gpus disponiveis!"
+    assert (
+        normalize_text("Total: 1.032 GB ou 1,032 GB (12.5 ms)")
+        == "total: 1032 gb ou 1032 gb (12.5 ms)"
+    )
 
     case = EvalCase(
         id="sample",
@@ -127,6 +131,12 @@ def test_score_answer_handles_accents_and_forbidden_terms() -> None:
     ok3, reasons3 = score_answer(case, "Não, apenas A100 e H100 atendem.")
     assert ok3 is True
     assert reasons3 == ()
+
+    check_two_case = next(c for c in load_eval_cases("default") if c.id == "check_two_a100")
+    ok_false_neg, _ = score_answer(
+        check_two_case, "Não, há apenas 4 A100 disponíveis na infraestrutura."
+    )
+    assert ok_false_neg is False
 
 
 def test_run_eval_summarizes_strategies_and_captures_exceptions() -> None:

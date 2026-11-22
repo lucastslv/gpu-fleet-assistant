@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import unicodedata
 from dataclasses import dataclass
 from typing import Any, Callable, Sequence
@@ -13,12 +14,15 @@ from gpu_fleet_assistant.strategies import (
     ToolCallingStrategy,
 )
 
+_THOUSANDS_SEP_RE = re.compile(r"(?<=\d)[.,](?=\d{3}(?!\d))")
+
 
 def normalize_text(text: str) -> str:
-    """Lowercase and strip diacritics for accent-insensitive Portuguese matching."""
+    """Lowercase, strip diacritics, and normalize thousands separators (e.g. 1.032 -> 1032)."""
     decomposed = unicodedata.normalize("NFKD", text)
     stripped = "".join(ch for ch in decomposed if not unicodedata.combining(ch))
-    return " ".join(stripped.lower().split())
+    collapsed = " ".join(stripped.lower().split())
+    return _THOUSANDS_SEP_RE.sub("", collapsed)
 
 
 @dataclass(frozen=True, slots=True)

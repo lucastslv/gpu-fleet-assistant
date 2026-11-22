@@ -15,8 +15,8 @@
     "prompt": "Existem duas A100 disponíveis?",
     "description": "Exemplo direto do desafio: existem 4 A100 livres.",
     "must_contain_all": ["A100"],
-    "must_contain_any": ["sim", "4", "disponiveis", "disponivel"],
-    "must_not_contain": ["nao existem", "nao ha", "indisponivel"],
+    "must_contain_any": ["sim", "existem", "disponiveis", "disponivel"],
+    "must_not_contain": ["nao,", "nao existem", "nao ha", "nao e possivel", "indisponivel"],
     "expected_tools_any": ["check_availability", "list_gpus", "find_gpus"]
   },
   {

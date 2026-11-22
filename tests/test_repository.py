@@ -96,7 +96,15 @@ def test_check_availability_cases(repo: GPURepository) -> None:
     missing = repo.check_availability("RTX 5090", quantity=1)
     assert missing.found is False
     assert missing.is_available is False
+    assert missing.ambiguous is False
     assert missing.gpu is None
+    assert missing.matches == ()
+
+    ambiguous = repo.check_availability("100", quantity=2)
+    assert ambiguous.found is False
+    assert ambiguous.is_available is False
+    assert ambiguous.ambiguous is True
+    assert [m.name for m in ambiguous.matches] == ["NVIDIA A100", "NVIDIA H100"]
 
     with pytest.raises(ValueError, match="at least 1"):
         repo.check_availability("A100", quantity=0)

@@ -153,6 +153,17 @@ class GPURepository:
 
         gpu = self.get_gpu(name)
         if gpu is None:
+            partial_matches = self.find_gpus(name_query=name) if name.strip() else []
+            if len(partial_matches) > 1:
+                return AvailabilityCheck(
+                    query=name,
+                    requested_quantity=quantity,
+                    found=False,
+                    is_available=False,
+                    gpu=None,
+                    ambiguous=True,
+                    matches=tuple(partial_matches),
+                )
             return AvailabilityCheck(
                 query=name,
                 requested_quantity=quantity,

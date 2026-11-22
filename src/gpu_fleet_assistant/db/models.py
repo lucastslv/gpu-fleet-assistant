@@ -48,6 +48,8 @@ class AvailabilityCheck:
     found: bool
     is_available: bool
     gpu: GPUResource | None = None
+    ambiguous: bool = False
+    matches: tuple[GPUResource, ...] = ()
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -56,6 +58,8 @@ class AvailabilityCheck:
             "found": self.found,
             "is_available": self.is_available,
             "gpu": self.gpu.to_dict() if self.gpu is not None else None,
+            "ambiguous": self.ambiguous,
+            "matches": [m.to_dict() for m in self.matches],
         }
 
 

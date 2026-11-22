@@ -1,2 +1,3 @@
-def main() -> None:
-    print("Hello from gpu-fleet-assistant!")
+from gpu_fleet_assistant.cli import main
+
+__all__ = ["main"]

@@ -47,8 +47,8 @@ src/gpu_fleet_assistant/
 │   ├── prompt_stuffing.py     # Baseline: snapshot do SQLite no system prompt
 │   └── tool_calling.py        # Principal: tools tipadas de leitura sobre GPURepository + loop controlado
 ├── evals/
-│   ├── dataset.json           # 15 casos (12 frota padrão + 3 estresse com 50 nós)
-│   ├── dataset.py             # Loader de casos + seed de estresse em memória
+│   ├── dataset.json           # 16 casos (12 frota padrão + 4 estresse com 50 GPUs reais NVIDIA/AMD/Intel)
+│   ├── dataset.py             # Loader de casos + frota de estresse de 50 GPUs reais em memória
 │   ├── evaluator.py           # Scoring determinístico, agregação e relatório Markdown
 │   └── runner.py              # CLI `uv run gpu-fleet-eval`
 └── web/
@@ -60,9 +60,9 @@ src/gpu_fleet_assistant/
 - [x] **Passo 1**: Domínio + SQLite + seed das 5 GPUs + testes unitários (`tests/test_repository.py`).
 - [x] **Passo 2**: Configuração multi-provider + `OpenAICompatibleClient` + `PromptStuffingStrategy` + CLI interativa + testes (`tests/test_config.py`, `tests/test_prompt_stuffing.py`).
 - [x] **Passo 3**: `ToolCallingStrategy` (schemas JSON/tools tipadas sobre `GPURepository` + loop controlado de execução + `--strategy tool_calling` na CLI + testes mockados em `tests/test_tool_calling.py`).
-- [x] **Passo 4**: Suite de `evals/` (`dataset.json`, `evaluator.py`, `runner.py` / `uv run gpu-fleet-eval`, testes em `tests/test_evals.py`) comparando `prompt_stuffing` vs. `tool_calling` nos cenários padrão (5 GPUs) e escalado (50 nós).
+- [x] **Passo 4**: Suite de `evals/` (`dataset.json`, `evaluator.py`, `runner.py` / `uv run gpu-fleet-eval`, testes em `tests/test_evals.py`) comparando `prompt_stuffing` vs. `tool_calling` nos cenários padrão (5 GPUs) e escalado (50 GPUs reais NVIDIA/AMD/Intel) em 5 modelos (`docs/evals/`).
 - [x] **Passo 5 (UI)**: Frontend em **FastAPI + HTML/CSS/JS** (`web/`, `uv run gpu-fleet-web`, testes em `tests/test_web.py`).
-- [ ] **Passo 5 (Docs)**: `README.md` final com arquitetura, decisões técnicas, instruções e resultados empíricos dos evals.
+- [x] **Passo 5 (Docs)**: `README.md` final com arquitetura, decisões técnicas, instruções e resultados empíricos dos 5 modelos.
 
 ## Comandos Úteis
 

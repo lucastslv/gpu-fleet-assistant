@@ -1,13 +1,12 @@
 const state = {
   history: [],
-  providers: [],
   busy: false,
 };
 
+const FIXED_STRATEGY = "tool_calling";
+const FIXED_PROVIDER = "deepseek";
+
 const els = {
-  strategySelect: document.getElementById("strategy-select"),
-  providerSelect: document.getElementById("provider-select"),
-  modelInput: document.getElementById("model-input"),
   kpiGpus: document.getElementById("kpi-gpus"),
   kpiVram: document.getElementById("kpi-vram"),
   gpuList: document.getElementById("gpu-list"),
@@ -100,28 +99,6 @@ function renderMarkdown(rawText) {
   flushList();
   flushTable();
   return html.join("");
-}
-
-async function fetchConfig() {
-  const res = await fetch("/api/config");
-  const data = await res.json();
-  state.providers = data.providers || [];
-  els.providerSelect.innerHTML = "";
-
-  for (const provider of state.providers) {
-    const opt = document.createElement("option");
-    opt.value = provider.name;
-    const suffix = provider.configured
-      ? provider.default_model
-        ? ` (${provider.default_model})`
-        : ""
-      : " (sem API key)";
-    opt.textContent = `${provider.name}${suffix}`;
-    if (provider.name === data.default_provider) {
-      opt.selected = true;
-    }
-    els.providerSelect.appendChild(opt);
-  }
 }
 
 async function fetchFleet() {
@@ -263,9 +240,8 @@ async function sendMessage(text) {
     const payload = {
       message: text,
       history: state.history,
-      strategy: els.strategySelect.value,
-      provider: els.providerSelect.value || null,
-      model: els.modelInput.value.trim() || null,
+      strategy: FIXED_STRATEGY,
+      provider: FIXED_PROVIDER,
     };
 
     const res = await fetch("/api/chat", {
@@ -339,6 +315,6 @@ if (els.themeToggleBtn) {
   });
 }
 
-Promise.all([fetchConfig(), fetchFleet()]).catch((err) => {
+fetchFleet().catch((err) => {
   appendErrorMessage(`Falha ao carregar dados iniciais: ${err.message}`);
 });

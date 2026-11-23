@@ -22,25 +22,7 @@
       </div>
     </div>
 
-    <div class="controls" aria-label="Configurações do assistente">
-      <label class="control">
-        <span>Estratégia</span>
-        <select id="strategy-select">
-          <option value="tool_calling">tool_calling (principal)</option>
-          <option value="prompt_stuffing">prompt_stuffing (baseline)</option>
-        </select>
-      </label>
-
-      <label class="control">
-        <span>Provider</span>
-        <select id="provider-select"></select>
-      </label>
-
-      <label class="control">
-        <span>Modelo (opcional)</span>
-        <input id="model-input" type="text" placeholder="padrão do .env" />
-      </label>
-
+    <div class="controls" aria-label="Preferências de exibição">
       <button id="theme-toggle-btn" class="theme-btn" type="button" title="Alternar tema claro/escuro">
         <span class="btn-icon" id="theme-icon" aria-hidden="true"></span>
         <span id="theme-label">Tema claro</span>
@@ -109,7 +91,7 @@
         <button type="button" class="chip" data-prompt="Existem duas A100 disponíveis?">Existem 2 A100?</button>
         <button type="button" class="chip" data-prompt="Quais modelos de GPU têm pelo menos 80 GB de VRAM?">GPUs ≥ 80 GB</button>
         <button type="button" class="chip" data-prompt="Qual é o total de memória VRAM disponível na frota?">VRAM total</button>
-        <button type="button" class="chip" data-prompt="Quantas NVIDIA B200 temos disponíveis?">Teste anti-alucinação (B200)</button>
+        <button type="button" class="chip" data-prompt="Quantas NVIDIA B200 temos disponíveis?">Temos NVIDIA B200?</button>
       </div>
 
       <div class="messages" id="messages" aria-live="polite">

@@ -29,7 +29,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--model",
         default=None,
-        help="Model name override (e.g. llama3.2:3b, qwen2.5:7b, deepseek-chat).",
+        help="Model name override (e.g. llama3.2:3b, deepseek-flash, mistral-large-4).",
     )
     parser.add_argument(
         "--strategies",

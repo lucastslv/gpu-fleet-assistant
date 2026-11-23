@@ -9,6 +9,60 @@ from gpu_fleet_assistant.db import GPURepository
 
 ScenarioName = Literal["default", "scaled"]
 
+# 45 real NVIDIA, AMD, and Intel GPU models added to the 5 challenge GPUs
+# (total = 50 distinct models) for the scaled stress-test scenario.
+# Tuple format: (name, total_quantity, available_quantity, memory_gb)
+SCALED_EXTRA_GPUS: tuple[tuple[str, int, int, int], ...] = (
+    # NVIDIA (27 models)
+    ("NVIDIA H200", 4, 3, 141),
+    ("NVIDIA L40", 4, 2, 48),
+    ("NVIDIA L4", 4, 0, 24),
+    ("NVIDIA A30", 4, 3, 24),
+    ("NVIDIA A16", 6, 4, 64),
+    ("NVIDIA A10", 8, 5, 24),
+    ("NVIDIA A10G", 6, 3, 24),
+    ("NVIDIA A2", 8, 6, 16),
+    ("NVIDIA T4", 12, 7, 16),
+    ("NVIDIA V100", 8, 4, 32),
+    ("NVIDIA P100", 4, 1, 16),
+    ("NVIDIA P40", 4, 2, 24),
+    ("NVIDIA Tesla K80", 4, 0, 24),
+    ("NVIDIA RTX 6000 Ada", 4, 2, 48),
+    ("NVIDIA RTX 5000 Ada", 4, 3, 32),
+    ("NVIDIA RTX 4000 Ada", 6, 4, 20),
+    ("NVIDIA RTX A6000", 4, 2, 48),
+    ("NVIDIA RTX A5000", 6, 3, 24),
+    ("NVIDIA RTX A4000", 6, 5, 16),
+    ("NVIDIA Quadro RTX 8000", 2, 1, 48),
+    ("NVIDIA Quadro GV100", 2, 1, 32),
+    ("NVIDIA Titan RTX", 2, 1, 24),
+    ("NVIDIA RTX 4080", 4, 2, 16),
+    ("NVIDIA RTX 4070 Ti", 4, 3, 12),
+    ("NVIDIA RTX 3090", 6, 4, 24),
+    ("NVIDIA RTX 3080", 6, 2, 10),
+    ("NVIDIA RTX 3060", 8, 5, 12),
+    # AMD (11 models)
+    ("AMD Instinct MI300X", 4, 2, 192),
+    ("AMD Instinct MI250X", 4, 3, 128),
+    ("AMD Instinct MI210", 4, 2, 64),
+    ("AMD Instinct MI100", 4, 1, 32),
+    ("AMD Radeon PRO W7900", 4, 3, 48),
+    ("AMD Radeon PRO W7800", 4, 2, 32),
+    ("AMD Radeon PRO W6800", 4, 2, 32),
+    ("AMD Radeon RX 7900 XTX", 6, 4, 24),
+    ("AMD Radeon RX 7900 XT", 6, 3, 20),
+    ("AMD Radeon RX 6950 XT", 4, 2, 16),
+    ("AMD Radeon RX 6800 XT", 4, 1, 16),
+    # Intel (7 models)
+    ("Intel Data Center GPU Max 1550", 2, 2, 128),
+    ("Intel Data Center GPU Max 1100", 4, 3, 48),
+    ("Intel Data Center GPU Flex 170", 6, 4, 16),
+    ("Intel Data Center GPU Flex 140", 6, 3, 12),
+    ("Intel Arc Pro A60", 4, 2, 12),
+    ("Intel Arc A770", 6, 4, 16),
+    ("Intel Arc A750", 6, 5, 8),
+)
+
 
 @dataclass(frozen=True, slots=True)
 class EvalCase:
@@ -61,7 +115,7 @@ def build_repository_for_case(case: EvalCase) -> GPURepository:
     repo.initialize(seed=True)
 
     if case.scenario == "scaled":
-        _seed_scaled_nodes(repo)
+        _seed_scaled_gpus(repo)
 
     for gpu_name, available_qty in case.setup_available.items():
         repo.set_available_quantity(gpu_name, available_qty)
@@ -69,25 +123,14 @@ def build_repository_for_case(case: EvalCase) -> GPURepository:
     return repo
 
 
-def _seed_scaled_nodes(repo: GPURepository) -> None:
-    """Insert 45 synthetic cluster nodes (total 50 rows) to stress-test context size and filtering."""
-    synthetic_rows: list[tuple[str, int, int, int]] = []
-    for idx in range(1, 46):
-        if idx == 37:
-            synthetic_rows.append(("Cluster Node 37 (NVIDIA H200)", 4, 3, 141))
-        elif idx == 42:
-            synthetic_rows.append(("Cluster Node 42 (NVIDIA L4)", 4, 0, 24))
-        elif idx % 2 == 0:
-            synthetic_rows.append((f"Cluster Node {idx:02d} (NVIDIA V100)", 4, 2, 32))
-        else:
-            synthetic_rows.append((f"Cluster Node {idx:02d} (NVIDIA T4)", 8, 4, 16))
-
+def _seed_scaled_gpus(repo: GPURepository) -> None:
+    """Insert 45 real NVIDIA/AMD/Intel GPU models (total 50 rows) for the scaled stress test."""
     with repo._connection() as conn:  # noqa: SLF001 - intentional internal setup for eval stress test
         conn.executemany(
             """
             INSERT OR IGNORE INTO gpus (name, total_quantity, available_quantity, memory_gb)
             VALUES (?, ?, ?, ?);
             """,
-            synthetic_rows,
+            SCALED_EXTRA_GPUS,
         )
         conn.commit()

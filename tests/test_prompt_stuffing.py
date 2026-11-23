@@ -140,6 +140,7 @@ def test_openai_compatible_client_parses_content_usage_and_tool_calls() -> None:
     )
 
     assert captured_kwargs["model"] == "qwen2.5:7b"
+    assert captured_kwargs["top_p"] == 1.0
     assert captured_kwargs["tool_choice"] == "auto"
     assert resp.content == "Consultando ferramentas..."
     assert resp.prompt_tokens == 100
@@ -148,3 +149,68 @@ def test_openai_compatible_client_parses_content_usage_and_tool_calls() -> None:
     assert len(resp.tool_calls) == 1
     assert resp.tool_calls[0].name == "check_availability"
     assert resp.tool_calls[0].arguments_json == '{"name": "A100", "quantity": 2}'
+
+
+def test_openai_compatible_client_extracts_text_from_content_blocks() -> None:
+    fake_completion = SimpleNamespace(
+        model="mistral-large-4",
+        choices=[
+            SimpleNamespace(
+                message=SimpleNamespace(
+                    content=[
+                        {"type": "thinking", "thinking": [{"type": "text", "text": "internal"}]},
+                        {"type": "text", "text": "Temos 4 NVIDIA A100 disponíveis."},
+                    ],
+                    tool_calls=None,
+                )
+            )
+        ],
+        usage=SimpleNamespace(prompt_tokens=50, completion_tokens=10, total_tokens=60),
+    )
+
+    fake_sdk = SimpleNamespace(
+        chat=SimpleNamespace(
+            completions=SimpleNamespace(create=lambda **kwargs: fake_completion)
+        )
+    )
+    client = OpenAICompatibleClient(
+        LLMConfig(
+            provider="mistral",
+            base_url="https://api.mistral.ai/v1",
+            model="mistral-large-4",
+            api_key="test-key",
+        ),
+        sdk_client=fake_sdk,
+    )
+
+    resp = client.complete([{"role": "user", "content": "Tem A100?"}])
+    assert resp.content == "Temos 4 NVIDIA A100 disponíveis."
+
+    think_completion = SimpleNamespace(
+        model="qwen3.5:4b",
+        choices=[
+            SimpleNamespace(
+                message=SimpleNamespace(
+                    content="<think>Verificando tabela...</think>\nSim, temos 4 A100.",
+                    tool_calls=None,
+                )
+            )
+        ],
+        usage=SimpleNamespace(prompt_tokens=40, completion_tokens=12, total_tokens=52),
+    )
+    think_client = OpenAICompatibleClient(
+        LLMConfig(
+            provider="ollama",
+            base_url="http://localhost:11434/v1",
+            model="qwen3.5:4b",
+            api_key="ollama",
+        ),
+        sdk_client=SimpleNamespace(
+            chat=SimpleNamespace(
+                completions=SimpleNamespace(create=lambda **kwargs: think_completion)
+            )
+        ),
+    )
+    assert think_client.complete([{"role": "user", "content": "Tem A100?"}]).content == (
+        "Sim, temos 4 A100."
+    )

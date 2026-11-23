@@ -119,8 +119,8 @@
     "id": "scaled_needle_h200",
     "category": "scaled_stress",
     "scenario": "scaled",
-    "prompt": "Existem 3 unidades disponíveis de H200 no cluster? Qual a VRAM de cada uma?",
-    "description": "Busca em tabela de 50 nós: Node 37 (NVIDIA H200) tem 3 livres e 141 GB.",
+    "prompt": "Existem 3 unidades disponíveis de NVIDIA H200 na frota? Qual a VRAM de cada uma?",
+    "description": "Busca em frota heterogênea de 50 GPUs reais: NVIDIA H200 tem 3 livres e 141 GB.",
     "must_contain_all": ["141"],
     "must_contain_any": ["sim", "3", "disponiveis", "disponivel"],
     "expected_tools_any": ["check_availability", "find_gpus"]
@@ -129,19 +129,29 @@
     "id": "scaled_filter_ge_100gb",
     "category": "scaled_stress",
     "scenario": "scaled",
-    "prompt": "Quais GPUs do cluster possuem pelo menos 100 GB de VRAM?",
-    "description": "Filtro em 50 nós: apenas NVIDIA H200 (141 GB).",
-    "must_contain_all": ["H200"],
-    "must_not_contain": ["A100", "L40S", "V100", "T4"],
+    "prompt": "Quais modelos de GPU da frota possuem pelo menos 100 GB de VRAM?",
+    "description": "Filtro multi-vendor em 50 GPUs: NVIDIA H200 (141), AMD MI300X (192), AMD MI250X (128) e Intel Max 1550 (128).",
+    "must_contain_all": ["H200", "MI300X", "MI250X", "Max 1550"],
+    "must_not_contain": ["T4", "RTX 3060", "Arc A750"],
     "expected_tools_any": ["find_gpus"]
   },
   {
     "id": "scaled_zero_l4",
     "category": "scaled_stress",
     "scenario": "scaled",
-    "prompt": "Há alguma GPU L4 disponível no nó 42?",
-    "description": "Busca em 50 nós: Node 42 (NVIDIA L4) tem 0 disponíveis.",
+    "prompt": "Há alguma NVIDIA L4 disponível no momento?",
+    "description": "Busca com desambiguação (L4 vs L40/L40S) em 50 GPUs: NVIDIA L4 tem 0 disponíveis.",
     "must_contain_any": ["nao", "0", "nenhuma", "indisponivel", "em uso"],
     "expected_tools_any": ["check_availability", "find_gpus"]
+  },
+  {
+    "id": "scaled_intel_ge_48gb",
+    "category": "scaled_stress",
+    "scenario": "scaled",
+    "prompt": "Quais GPUs da Intel têm pelo menos 48 GB de VRAM?",
+    "description": "Filtro combinado (fabricante + VRAM mínima) em 50 GPUs: Max 1550 (128 GB) e Max 1100 (48 GB).",
+    "must_contain_all": ["Max 1550", "Max 1100"],
+    "must_not_contain": ["Flex 170", "Flex 140", "A770", "A750"],
+    "expected_tools_any": ["find_gpus"]
   }
 ]

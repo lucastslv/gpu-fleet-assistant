@@ -73,7 +73,7 @@ def resolve_llm_config(
         api_key = _env("OLLAMA_API_KEY", "ollama")
     elif selected == "deepseek":
         base_url = _env("DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1")
-        model = model_override or _env("DEEPSEEK_MODEL", "deepseek-chat")
+        model = model_override or _env("DEEPSEEK_MODEL", "deepseek-flash")
         api_key = _env("DEEPSEEK_API_KEY")
         if not api_key:
             raise ValueError("DEEPSEEK_API_KEY is required when using the 'deepseek' provider.")

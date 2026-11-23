@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import time
 from dataclasses import dataclass
 from typing import Any, Protocol, Sequence
@@ -7,6 +8,8 @@ from typing import Any, Protocol, Sequence
 from openai import OpenAI
 
 from gpu_fleet_assistant.config import LLMConfig
+
+_THINK_TAG_RE = re.compile(r"<think>.*?</think>", re.DOTALL | re.IGNORECASE)
 
 
 @dataclass(frozen=True, slots=True)
@@ -46,6 +49,39 @@ class LLMClient(Protocol):
     ) -> LLMResponse: ...
 
 
+def _extract_text_content(raw_content: Any) -> str:
+    """Normalize string or structured content-block lists to clean user-facing text."""
+    if raw_content is None:
+        return ""
+    if isinstance(raw_content, str):
+        return _THINK_TAG_RE.sub("", raw_content).strip()
+    if isinstance(raw_content, list):
+        parts: list[str] = []
+        for block in raw_content:
+            if isinstance(block, str):
+                cleaned = _THINK_TAG_RE.sub("", block).strip()
+                if cleaned:
+                    parts.append(cleaned)
+                continue
+            block_type = (
+                block.get("type")
+                if isinstance(block, dict)
+                else getattr(block, "type", None)
+            )
+            if block_type == "text":
+                text = (
+                    block.get("text")
+                    if isinstance(block, dict)
+                    else getattr(block, "text", None)
+                )
+                if isinstance(text, str):
+                    cleaned = _THINK_TAG_RE.sub("", text).strip()
+                    if cleaned:
+                        parts.append(cleaned)
+        return "\n".join(parts).strip()
+    return _THINK_TAG_RE.sub("", str(raw_content)).strip()
+
+
 class OpenAICompatibleClient:
     """Thin wrapper over the OpenAI SDK for Ollama, DeepSeek, Mistral, and similar APIs."""
 
@@ -73,6 +109,9 @@ class OpenAICompatibleClient:
             "messages": list(messages),
             "temperature": self.config.temperature,
         }
+        if self.config.temperature == 0.0:
+            # Required by providers like Mistral when using greedy sampling (temperature=0).
+            kwargs["top_p"] = 1.0
         if tools:
             kwargs["tools"] = list(tools)
             if tool_choice is not None:
@@ -84,7 +123,7 @@ class OpenAICompatibleClient:
 
         choice = completion.choices[0]
         message = choice.message
-        content = (message.content or "").strip()
+        content = _extract_text_content(message.content)
 
         raw_tool_calls = getattr(message, "tool_calls", None) or []
         parsed_tool_calls = tuple(

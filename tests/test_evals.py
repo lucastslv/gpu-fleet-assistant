@@ -73,8 +73,8 @@ def test_load_eval_cases_scenarios() -> None:
     all_cases = load_eval_cases("all")
 
     assert len(default_cases) == 12
-    assert len(scaled_cases) == 3
-    assert len(all_cases) == 15
+    assert len(scaled_cases) == 4
+    assert len(all_cases) == 16
 
     with pytest.raises(ValueError, match="Unsupported scenario"):
         load_eval_cases("invalid")
@@ -93,11 +93,31 @@ def test_build_repository_for_scaled_and_mutated_cases() -> None:
 
     scaled_repo = build_repository_for_case(cases["scaled_needle_h200"])
     try:
-        assert len(scaled_repo.list_gpus()) == 50
-        h200 = scaled_repo.get_gpu("H200")
+        all_gpus = scaled_repo.list_gpus()
+        assert len(all_gpus) == 50
+        assert any(g.name.startswith("AMD ") for g in all_gpus)
+        assert any(g.name.startswith("Intel ") for g in all_gpus)
+
+        h200 = scaled_repo.get_gpu("NVIDIA H200")
         assert h200 is not None
         assert h200.memory_gb == 141
         assert h200.available_quantity == 3
+
+        ge_100 = [g.name for g in scaled_repo.find_gpus(min_memory_gb=100)]
+        assert ge_100 == [
+            "NVIDIA H200",
+            "AMD Instinct MI300X",
+            "AMD Instinct MI250X",
+            "Intel Data Center GPU Max 1550",
+        ]
+
+        intel_ge_48 = [
+            g.name for g in scaled_repo.find_gpus(name_query="Intel", min_memory_gb=48)
+        ]
+        assert intel_ge_48 == [
+            "Intel Data Center GPU Max 1550",
+            "Intel Data Center GPU Max 1100",
+        ]
     finally:
         scaled_repo.close()
 

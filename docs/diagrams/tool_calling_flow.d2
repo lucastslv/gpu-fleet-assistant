@@ -1,4 +1,4 @@
-shape: sequence_diagram
+direction: down
 
 vars: {
   d2-config: {
@@ -6,19 +6,88 @@ vars: {
   }
 }
 
-user: "Usuário / Web UI"
-api: "FastAPI\n(/api/chat)"
-strategy: "ToolCallingStrategy"
-llm: "LLM\n(DeepSeek Flash)"
-db: "GPURepository\n+ SQLite"
+classes: {
+  box: {
+    style: {
+      fill: "#ffffff"
+      stroke: "#334155"
+      stroke-width: 2
+      border-radius: 8
+      font-size: 14
+      font-color: "#0f172a"
+    }
+  }
+  core: {
+    style: {
+      fill: "#f8fafc"
+      stroke: "#0f172a"
+      stroke-width: 2
+      border-radius: 8
+      font-size: 14
+      font-color: "#0f172a"
+      bold: true
+    }
+  }
+  invisible: {
+    style: {
+      fill: "transparent"
+      stroke: "transparent"
+    }
+  }
+}
 
-user -> api: "1. POST /api/chat\n\"Existem duas A100 disponíveis?\""
-api -> strategy: "2. chat(message, history)"
-strategy -> llm: "3. System prompt + pergunta\n+ JSON Schema das 4 tools"
-llm -> strategy: "4. tool_call:\ncheck_availability(name=\"A100\", quantity=2)"
-strategy -> db: "5. SELECT ... FROM gpus (somente leitura)"
-db -> strategy: "6. {found: true, is_available: true,\navailable_quantity: 4, memory_gb: 80}"
-strategy -> llm: "7. Devolve resultado da tool\n(role: \"tool\")"
-llm -> strategy: "8. Resposta final em linguagem natural\n\"Sim, existem 4 NVIDIA A100 disponíveis...\""
-strategy -> api: "9. AssistantResponse\n(resposta + telemetria + traces)"
-api -> user: "10. JSON (resposta + inspetor de tools)"
+entry: "" {
+  class: invisible
+  grid-rows: 1
+  horizontal-gap: 180
+
+  user: "Usuário\n(Web UI)" {
+    shape: person
+    style: {
+      fill: "#f8fafc"
+      stroke: "#334155"
+      stroke-width: 2
+      font-color: "#0f172a"
+    }
+  }
+
+  api: "FastAPI\n(POST /api/chat)" {
+    class: box
+  }
+
+  user <-> api: "Pergunta / Resposta"
+}
+
+loop: "Ciclo de Tool Calling" {
+  direction: down
+  style: {
+    fill: "#ffffff"
+    stroke: "#cbd5e1"
+    stroke-width: 2
+    border-radius: 10
+    font-size: 13
+    font-color: "#475569"
+    bold: true
+  }
+
+  strategy: "ToolCallingStrategy\nLoop controlado (max_steps = 5)" {
+    class: core
+  }
+
+  llm: "LLM\n(DeepSeek Flash)" {
+    class: box
+  }
+
+  db: "GPURepository\n+ SQLite (gpus)" {
+    shape: cylinder
+    class: box
+  }
+
+  strategy -> llm: "Prompt / resultado"
+  llm -> strategy: "tool_call / resposta"
+
+  strategy -> db: "Consulta SQL (leitura)"
+  db -> strategy: "Dados estruturados"
+}
+
+entry.api <-> loop.strategy: "Mensagem / Resposta + traces"

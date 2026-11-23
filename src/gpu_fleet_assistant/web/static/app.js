@@ -21,6 +21,8 @@ const els = {
   themeToggleBtn: document.getElementById("theme-toggle-btn"),
   themeIcon: document.getElementById("theme-icon"),
   themeLabel: document.getElementById("theme-label"),
+  modelBadgeText: document.getElementById("model-badge-text"),
+  providerBadgeText: document.getElementById("provider-badge-text"),
 };
 
 const SUN_ICON = `<svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path></svg>`;
@@ -99,6 +101,23 @@ function renderMarkdown(rawText) {
   flushList();
   flushTable();
   return html.join("");
+}
+
+async function fetchActiveModel() {
+  try {
+    const res = await fetch("/api/config");
+    if (!res.ok) return;
+    const data = await res.json();
+    const provider = (data.providers || []).find((p) => p.name === FIXED_PROVIDER);
+    if (els.providerBadgeText) {
+      els.providerBadgeText.textContent = FIXED_PROVIDER;
+    }
+    if (provider && provider.default_model && els.modelBadgeText) {
+      els.modelBadgeText.textContent = provider.default_model;
+    }
+  } catch {
+    // Keep default badge label if config endpoint is unreachable
+  }
 }
 
 async function fetchFleet() {
@@ -257,6 +276,9 @@ async function sendMessage(text) {
     }
 
     appendAssistantMessage(data);
+    if (data.model && els.modelBadgeText) {
+      els.modelBadgeText.textContent = data.model;
+    }
     state.history.push({ role: "user", content: text });
     state.history.push({ role: "assistant", content: data.answer });
   } catch (err) {
@@ -315,6 +337,6 @@ if (els.themeToggleBtn) {
   });
 }
 
-fetchFleet().catch((err) => {
+Promise.all([fetchActiveModel(), fetchFleet()]).catch((err) => {
   appendErrorMessage(`Falha ao carregar dados iniciais: ${err.message}`);
 });

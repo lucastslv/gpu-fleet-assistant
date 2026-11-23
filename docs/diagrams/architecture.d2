@@ -1,76 +1,88 @@
 direction: down
 
+vars: {
+  d2-config: {
+    theme-id: 0
+  }
+}
+
 classes: {
-  layer: {
+  box: {
     style: {
+      fill: "#ffffff"
+      stroke: "#334155"
+      stroke-width: 2
+      border-radius: 8
+      font-size: 13
+      font-color: "#0f172a"
+    }
+  }
+  highlight: {
+    style: {
+      fill: "#f8fafc"
+      stroke: "#0f172a"
+      stroke-width: 2
+      border-radius: 8
+      font-size: 13
+      font-color: "#0f172a"
+      bold: true
+    }
+  }
+  group: {
+    style: {
+      fill: "#ffffff"
+      stroke: "#cbd5e1"
+      stroke-width: 2
       border-radius: 10
-      stroke-width: 2
-      font-size: 15
-      bold: true
-    }
-  }
-  node: {
-    style: {
-      border-radius: 8
-      font-size: 13
-    }
-  }
-  primary: {
-    style: {
-      border-radius: 8
-      stroke-width: 2
-      font-size: 13
+      font-size: 14
+      font-color: "#334155"
       bold: true
     }
   }
 }
 
-interfaces: "1. Interfaces & Avaliação" {
-  class: layer
-  web: "Web UI\nFastAPI + HTML/CSS/JS\n(DeepSeek + Tool Calling)" { class: primary }
-  cli: "CLI Interativa\ngpu-fleet-assistant" { class: node }
-  evals: "Suite de Evals\ngpu-fleet-eval\n(16 casos · 5 e 50 GPUs)" { class: node }
+frontend: "Frontend Web (HTML / CSS / JS)" {
+  class: group
+  direction: right
+  chat_ui: "Chat + Inspetor de Tools\nPerguntas, respostas e telemetria" { class: box }
+  fleet_ui: "Painel da Frota\nKPIs e simulação de uso (− / +)" { class: box }
 }
 
-strategies: "2. Estratégias de Assistente (Strategy Pattern)" {
-  class: layer
-  tool_calling: "ToolCallingStrategy (Principal)\nLoop controlado (max_steps=5)\n4 tools somente leitura:\nlist_gpus · find_gpus\ncheck_availability · get_fleet_summary" { class: primary }
-  prompt_stuffing: "PromptStuffingStrategy (Baseline)\nSnapshot completo da tabela\ninjetado no system prompt (1 chamada)" { class: node }
+api: "Backend FastAPI (API REST)" {
+  class: group
+  direction: right
+  chat_ep: "POST /api/chat" { class: box }
+  fleet_ep: "GET · PATCH · POST\n/api/gpus" { class: box }
 }
 
-llm: "3. Camada de LLM (OpenAI-Compatible)" {
-  class: layer
-  client: "OpenAICompatibleClient\nTelemetria: latência, tokens, tool_calls\nNormalização multi-provider (thinking/top_p)" { class: primary }
-  providers: "Provedores" {
-    direction: right
-    ollama: "Ollama Local\nllama3.2:3b · qwen3.5:4b" { class: node }
-    deepseek: "DeepSeek API\ndeepseek-flash" { class: primary }
-    mistral: "Mistral API\nmistral-small-2603\nmistral-large-4" { class: node }
-  }
-  client -> providers.ollama
-  client -> providers.deepseek
-  client -> providers.mistral
+core: "Núcleo do Assistente" {
+  class: group
+  direction: right
+  strategy: "ToolCallingStrategy\nLoop controlado (max_steps = 5)\n4 tools somente leitura:\nlist_gpus · find_gpus\ncheck_availability · get_fleet_summary" { class: highlight }
+  llm_client: "OpenAICompatibleClient\nTelemetria (latência, tokens)\nNormalização multi-provider" { class: box }
+  strategy -> llm_client: "Chat + JSON Schema"
 }
 
-data: "4. Domínio & Persistência (Repository Pattern)" {
-  class: layer
-  repo: "GPURepository\nQueries determinísticas + desambiguação\n(sem acoplamento a LLM ou HTTP)" { class: primary }
-  sqlite: "SQLite (gpus)\nSeed idempotente das 5 GPUs\ntotal_quantity · available_quantity · memory_gb" {
+data: "Camada de Dados (Repository Pattern)" {
+  class: group
+  direction: right
+  repo: "GPURepository\nQueries determinísticas\nDesambiguação de nomes" { class: highlight }
+  sqlite: "SQLite (gpus)\n5 GPUs do desafio\ntotal · disponíveis · VRAM" {
     shape: cylinder
-    class: node
+    class: box
   }
   repo -> sqlite: "SQL parametrizado"
 }
 
-interfaces.web -> strategies.tool_calling: "POST /api/chat"
-interfaces.web -> data.repo: "GET/PATCH /api/gpus\n(simulação ao vivo)"
-interfaces.cli -> strategies.tool_calling
-interfaces.cli -> strategies.prompt_stuffing
-interfaces.evals -> strategies.tool_calling
-interfaces.evals -> strategies.prompt_stuffing
+llm: "LLM (DeepSeek Flash)\nAPI OpenAI-Compatible" {
+  class: box
+}
 
-strategies.tool_calling -> llm.client: "chat + JSON Schema tools"
-strategies.prompt_stuffing -> llm.client: "chat + snapshot"
+frontend.chat_ui -> api.chat_ep: "HTTP / JSON"
+frontend.fleet_ui -> api.fleet_ep: "HTTP / JSON"
 
-strategies.tool_calling -> data.repo: "leitura via tools"
-strategies.prompt_stuffing -> data.repo: "snapshot completo"
+api.chat_ep -> core.strategy: "chat(mensagem, histórico)"
+api.fleet_ep -> data.repo: "leitura e escrita\n(simulação ao vivo)"
+
+core.strategy -> data.repo: "somente leitura\n(menor privilégio)"
+core.llm_client -> llm: "HTTPS / JSON"

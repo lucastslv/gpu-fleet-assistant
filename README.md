@@ -25,9 +25,13 @@ O banco rastreia `total_quantity` e `available_quantity`, permitindo simular GPU
 
 ## Arquitetura e Decisões Técnicas
 
-O código foi organizado em **4 camadas desacopladas** (fonte do diagrama em [docs/diagrams/architecture.d2](docs/diagrams/architecture.d2)):
+O código foi organizado em **4 camadas desacopladas** (fontes D2 em [docs/diagrams/](docs/diagrams/)):
 
-![Arquitetura do GPU Fleet Assistant](docs/diagrams/architecture.svg)
+### Visão de Componentes
+![Arquitetura de Componentes](docs/diagrams/architecture.svg)
+
+### Fluxo de Execução (*Tool Calling*)
+![Fluxo de Tool Calling](docs/diagrams/tool_calling_flow.svg)
 
 ### Principais decisões
 1. **Repository Pattern separado das Tools (`db/repository.py` vs. `strategies/tool_calling.py`)**

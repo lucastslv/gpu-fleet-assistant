@@ -1,0 +1,24 @@
+shape: sequence_diagram
+
+vars: {
+  d2-config: {
+    theme-id: 0
+  }
+}
+
+user: "Usuário / Web UI"
+api: "FastAPI\n(/api/chat)"
+strategy: "ToolCallingStrategy"
+llm: "LLM\n(DeepSeek Flash)"
+db: "GPURepository\n+ SQLite"
+
+user -> api: "1. POST /api/chat\n\"Existem duas A100 disponíveis?\""
+api -> strategy: "2. chat(message, history)"
+strategy -> llm: "3. System prompt + pergunta\n+ JSON Schema das 4 tools"
+llm -> strategy: "4. tool_call:\ncheck_availability(name=\"A100\", quantity=2)"
+strategy -> db: "5. SELECT ... FROM gpus (somente leitura)"
+db -> strategy: "6. {found: true, is_available: true,\navailable_quantity: 4, memory_gb: 80}"
+strategy -> llm: "7. Devolve resultado da tool\n(role: \"tool\")"
+llm -> strategy: "8. Resposta final em linguagem natural\n\"Sim, existem 4 NVIDIA A100 disponíveis...\""
+strategy -> api: "9. AssistantResponse\n(resposta + telemetria + traces)"
+api -> user: "10. JSON (resposta + inspetor de tools)"

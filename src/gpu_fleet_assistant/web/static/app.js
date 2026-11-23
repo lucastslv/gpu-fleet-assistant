@@ -258,7 +258,10 @@ async function sendMessage(text) {
   try {
     const payload = {
       message: text,
-      history: state.history,
+      history: state.history.slice(-12).map((item) => ({
+        role: item.role,
+        content: item.content.slice(0, 2000),
+      })),
       strategy: FIXED_STRATEGY,
       provider: FIXED_PROVIDER,
     };

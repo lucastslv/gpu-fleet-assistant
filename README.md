@@ -25,18 +25,9 @@ O banco rastreia `total_quantity` e `available_quantity`, permitindo simular GPU
 
 ## Arquitetura e Decisões Técnicas
 
-O código foi organizado em **4 camadas desacopladas**:
+O código foi organizado em **4 camadas desacopladas** (fonte do diagrama em [docs/diagrams/architecture.d2](docs/diagrams/architecture.d2)):
 
-```text
-  Web UI (FastAPI + HTML/CSS/JS) ──┐
-  CLI Interativa                   ├──► AssistantStrategy ──► OpenAICompatibleClient (Ollama / DeepSeek / Mistral)
-  Suite de Evals (16 casos)        ┘         │
-                                             ├── PromptStuffingStrategy (baseline: snapshot no system prompt)
-                                             └── ToolCallingStrategy    (principal: 4 tools tipadas somente leitura)
-                                                        │
-                                                        ▼
-                                                 GPURepository ──► SQLite
-```
+![Arquitetura do GPU Fleet Assistant](docs/diagrams/architecture.svg)
 
 ### Principais decisões
 1. **Repository Pattern separado das Tools (`db/repository.py` vs. `strategies/tool_calling.py`)**
@@ -115,7 +106,7 @@ Acesse `http://127.0.0.1:8000` (e a documentação interativa OpenAPI em `http:/
 
 Recursos da interface:
 - Painel ao vivo da frota SQLite com botões **`−` / `+`** e **Resetar frota** para simular GPUs ocupadas em tempo real;
-- Seletor de **estratégia** (`tool_calling` vs. `prompt_stuffing`), **provider** e **modelo**;
+- Chat configurado com a arquitetura principal (**DeepSeek + Tool Calling**);
 - Barra de telemetria por resposta (`latency_ms`, `tokens`, `llm_calls`) e **inspetor expansível de *tool calls*** (argumentos e JSON retornado);
 - Alternância entre tema escuro e tema claro.
 
@@ -149,7 +140,9 @@ gpu-fleet-assistant/
 ├── Desafio_2026.md
 ├── .env.example
 ├── pyproject.toml
-├── docs/evals/                     # Relatórios empíricos (.md e .json) dos 5 modelos
+├── docs/
+│   ├── diagrams/                   # Diagrama de arquitetura em D2 (`architecture.d2` e `architecture.svg`)
+│   └── evals/                      # Índice e relatórios empíricos (.md e .json) dos 5 modelos
 ├── src/gpu_fleet_assistant/
 │   ├── config.py                   # Configuração multi-provider (.env)
 │   ├── cli.py                      # CLI interativa (`gpu-fleet-assistant`)

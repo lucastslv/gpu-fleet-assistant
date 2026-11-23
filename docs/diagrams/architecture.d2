@@ -1,0 +1,76 @@
+direction: down
+
+classes: {
+  layer: {
+    style: {
+      border-radius: 10
+      stroke-width: 2
+      font-size: 15
+      bold: true
+    }
+  }
+  node: {
+    style: {
+      border-radius: 8
+      font-size: 13
+    }
+  }
+  primary: {
+    style: {
+      border-radius: 8
+      stroke-width: 2
+      font-size: 13
+      bold: true
+    }
+  }
+}
+
+interfaces: "1. Interfaces & Avaliação" {
+  class: layer
+  web: "Web UI\nFastAPI + HTML/CSS/JS\n(DeepSeek + Tool Calling)" { class: primary }
+  cli: "CLI Interativa\ngpu-fleet-assistant" { class: node }
+  evals: "Suite de Evals\ngpu-fleet-eval\n(16 casos · 5 e 50 GPUs)" { class: node }
+}
+
+strategies: "2. Estratégias de Assistente (Strategy Pattern)" {
+  class: layer
+  tool_calling: "ToolCallingStrategy (Principal)\nLoop controlado (max_steps=5)\n4 tools somente leitura:\nlist_gpus · find_gpus\ncheck_availability · get_fleet_summary" { class: primary }
+  prompt_stuffing: "PromptStuffingStrategy (Baseline)\nSnapshot completo da tabela\ninjetado no system prompt (1 chamada)" { class: node }
+}
+
+llm: "3. Camada de LLM (OpenAI-Compatible)" {
+  class: layer
+  client: "OpenAICompatibleClient\nTelemetria: latência, tokens, tool_calls\nNormalização multi-provider (thinking/top_p)" { class: primary }
+  providers: "Provedores" {
+    direction: right
+    ollama: "Ollama Local\nllama3.2:3b · qwen3.5:4b" { class: node }
+    deepseek: "DeepSeek API\ndeepseek-flash" { class: primary }
+    mistral: "Mistral API\nmistral-small-2603\nmistral-large-4" { class: node }
+  }
+  client -> providers.ollama
+  client -> providers.deepseek
+  client -> providers.mistral
+}
+
+data: "4. Domínio & Persistência (Repository Pattern)" {
+  class: layer
+  repo: "GPURepository\nQueries determinísticas + desambiguação\n(sem acoplamento a LLM ou HTTP)" { class: primary }
+  sqlite: "SQLite (gpus)\nSeed idempotente das 5 GPUs\ntotal_quantity · available_quantity · memory_gb" {
+    shape: cylinder
+    class: node
+  }
+  repo -> sqlite: "SQL parametrizado"
+}
+
+interfaces.web -> strategies.tool_calling: "POST /api/chat"
+interfaces.web -> data.repo: "GET/PATCH /api/gpus\n(simulação ao vivo)"
+interfaces.cli -> strategies.tool_calling
+interfaces.cli -> strategies.prompt_stuffing
+interfaces.evals -> strategies.tool_calling
+interfaces.evals -> strategies.prompt_stuffing
+
+strategies.tool_calling -> llm.client: "chat + JSON Schema tools"
+strategies.prompt_stuffing -> llm.client: "chat + snapshot"
+
+strategies.tool_calling -> data.repo: "leitura via tools"
+strategies.prompt_stuffing -> data.repo: "snapshot completo"

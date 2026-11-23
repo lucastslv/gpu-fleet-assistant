@@ -148,3 +148,31 @@ def test_chat_endpoint_supports_tool_calling_and_prompt_stuffing(client: TestCli
 def test_chat_endpoint_rejects_blank_message(client: TestClient) -> None:
     resp = client.post("/api/chat", json={"message": "   ", "strategy": "tool_calling"})
     assert resp.status_code == 400
+
+
+def test_chat_endpoint_enforces_payload_limits_and_rate_limit() -> None:
+    repo = GPURepository(":memory:")
+    repo.initialize(seed=True)
+    app = create_app(
+        repository=repo,
+        client_factory=lambda provider, model: StubWebLLMClient("stub"),
+        rate_limit_per_minute=2,
+        rate_limit_per_hour=10,
+    )
+    try:
+        with TestClient(app) as limited_client:
+            # Message exceeding max_length (500) is rejected by Pydantic
+            too_long = limited_client.post("/api/chat", json={"message": "a" * 501})
+            assert too_long.status_code == 422
+
+            # First two requests from IP A succeed; third triggers 429
+            headers_a = {"X-Forwarded-For": "203.0.113.10"}
+            assert limited_client.post("/api/chat", json={"message": "Oi 1"}, headers=headers_a).status_code == 200
+            assert limited_client.post("/api/chat", json={"message": "Oi 2"}, headers=headers_a).status_code == 200
+            assert limited_client.post("/api/chat", json={"message": "Oi 3"}, headers=headers_a).status_code == 429
+
+            # Another IP is unaffected
+            headers_b = {"X-Forwarded-For": "203.0.113.20"}
+            assert limited_client.post("/api/chat", json={"message": "Oi B"}, headers=headers_b).status_code == 200
+    finally:
+        repo.close()

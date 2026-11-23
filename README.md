@@ -4,8 +4,9 @@ Assistente conversacional de IA para consultar recursos compartilhados de GPU (p
 
 A solução principal combina **FastAPI + HTML/CSS/JS**, **SQLite** e **Tool Calling** (tools somente leitura sobre um repositório desacoplado), acompanhada de uma baseline em **Prompt Stuffing** e uma suite reproduzível de avaliação (`evals/`) executada em 5 modelos locais e via API.
 
-## Documentação e Relatório
+## Documentação e Demo
 
+- **Demo ao vivo:** [gpu-fleet-assistant.onrender.com](https://gpu-fleet-assistant.onrender.com/) *(plano gratuito: o primeiro acesso pode levar ~30s para acordar a instância)*
 - **Enunciado do desafio:** [Desafio_2026.md](Desafio_2026.md)
 - **Relatório técnico completo (decisões, trade-offs e avaliação empírica):** [docs/report/main.pdf](docs/report/main.pdf) *(fonte Typst em [docs/report/main.typ](docs/report/main.typ))*
 - **Relatórios e traces dos evals (5 modelos, 160 execuções):** [docs/evals/README.md](docs/evals/README.md)

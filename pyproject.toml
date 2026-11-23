@@ -1,7 +1,7 @@
 [project]
 name = "gpu-fleet-assistant"
 version = "0.1.0"
-description = "Add your description here"
+description = "Conversational AI assistant for querying shared GPU fleet resources with SQLite and Tool Calling"
 readme = "README.md"
 authors = [
     { name = "Lucas Telles", email = "lucas.telles@inf.ufrgs.br" }

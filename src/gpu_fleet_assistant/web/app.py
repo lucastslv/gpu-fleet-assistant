@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 import argparse
+import os
+import threading
+import time
+from collections import deque
 from pathlib import Path
 from typing import Any, Callable, Literal
 
 import uvicorn
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -30,12 +34,12 @@ ClientFactory = Callable[[str | None, str | None], LLMClient]
 
 class HistoryItem(BaseModel):
     role: Literal["user", "assistant"]
-    content: str = Field(min_length=1)
+    content: str = Field(min_length=1, max_length=2000)
 
 
 class ChatRequest(BaseModel):
-    message: str = Field(min_length=1)
-    history: list[HistoryItem] = Field(default_factory=list)
+    message: str = Field(min_length=1, max_length=500)
+    history: list[HistoryItem] = Field(default_factory=list, max_length=12)
     strategy: Literal["tool_calling", "prompt_stuffing"] = "tool_calling"
     provider: Literal["ollama", "deepseek", "mistral", "custom"] | None = None
     model: str | None = None
@@ -43,6 +47,48 @@ class ChatRequest(BaseModel):
 
 class UpdateAvailabilityRequest(BaseModel):
     available_quantity: int = Field(ge=0)
+
+
+class _IPRateLimiter:
+    """Thread-safe in-memory sliding-window rate limiter keyed by client IP."""
+
+    def __init__(self, *, per_minute: int = 15, per_hour: int = 60) -> None:
+        self.per_minute = max(0, per_minute)
+        self.per_hour = max(0, per_hour)
+        self._hits: dict[str, deque[float]] = {}
+        self._lock = threading.Lock()
+
+    def check(self, client_ip: str) -> None:
+        if self.per_minute == 0 and self.per_hour == 0:
+            return
+        now = time.monotonic()
+        with self._lock:
+            bucket = self._hits.setdefault(client_ip, deque())
+            while bucket and now - bucket[0] > 3600.0:
+                bucket.popleft()
+
+            if self.per_minute > 0:
+                recent_min = sum(1 for ts in bucket if now - ts <= 60.0)
+                if recent_min >= self.per_minute:
+                    raise HTTPException(
+                        status_code=429,
+                        detail="Limite de requisições por minuto atingido. Aguarde alguns segundos e tente novamente.",
+                    )
+
+            if self.per_hour > 0 and len(bucket) >= self.per_hour:
+                raise HTTPException(
+                    status_code=429,
+                    detail="Limite de requisições por hora atingido. Tente novamente mais tarde.",
+                )
+
+            bucket.append(now)
+
+
+def _extract_client_ip(request: Request) -> str:
+    forwarded = request.headers.get("x-forwarded-for", "")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
 
 
 def _default_client_factory(provider: str | None, model: str | None) -> LLMClient:
@@ -80,12 +126,26 @@ def create_app(
     *,
     repository: GPURepository | None = None,
     client_factory: ClientFactory | None = None,
+    rate_limit_per_minute: int | None = None,
+    rate_limit_per_hour: int | None = None,
 ) -> FastAPI:
     """Create and configure the FastAPI web application."""
     app_cfg = load_app_config()
     repo = repository or GPURepository(app_cfg.db_path)
     repo.initialize(seed=True)
     make_client = client_factory or _default_client_factory
+
+    rpm = (
+        rate_limit_per_minute
+        if rate_limit_per_minute is not None
+        else int(os.getenv("CHAT_RATE_LIMIT_PER_MINUTE", "15"))
+    )
+    rph = (
+        rate_limit_per_hour
+        if rate_limit_per_hour is not None
+        else int(os.getenv("CHAT_RATE_LIMIT_PER_HOUR", "60"))
+    )
+    limiter = _IPRateLimiter(per_minute=rpm, per_hour=rph)
 
     app = FastAPI(
         title="GPU Fleet Assistant",
@@ -148,7 +208,8 @@ def create_app(
         }
 
     @app.post("/api/chat")
-    def chat(payload: ChatRequest) -> dict[str, Any]:
+    def chat(payload: ChatRequest, request: Request) -> dict[str, Any]:
+        limiter.check(_extract_client_ip(request))
         cleaned_message = payload.message.strip()
         if not cleaned_message:
             raise HTTPException(status_code=400, detail="message must not be empty.")

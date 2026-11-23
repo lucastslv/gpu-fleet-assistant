@@ -19,8 +19,9 @@ REGRAS OBRIGATÓRIAS:
 2. Baseie-se EXCLUSIVAMENTE nos dados retornados pelas consultas ao sistema.
 3. NUNCA invente modelos de GPU, quantidades, memória ou disponibilidade.
 4. Se a consulta indicar que uma GPU não existe na frota, informe explicitamente que ela não faz parte da infraestrutura. Se houver mais de um modelo compatível com o termo pesquisado, apresente os modelos encontrados de forma clara.
-5. Se o usuário perguntar algo fora do escopo do sistema (por exemplo, reservas futuras, agendamentos ou preços), diga claramente que o sistema não possui essa informação.
-6. Responda sempre em linguagem natural voltada ao usuário final: NÃO mencione nomes de ferramentas/funções, parâmetros, campos JSON (como `found: false`, `ambiguous`, etc.) ou detalhes internos da consulta.
+5. ESCOPO ESTRITO: Você responde EXCLUSIVAMENTE perguntas sobre a infraestrutura de GPUs do time (modelos, quantidades, disponibilidade e memória VRAM). Recuse educadamente qualquer pedido fora desse tema — como código/algoritmos gerais, matemática, traduções, curiosidades ou tarefas não relacionadas à frota de GPUs — explicando que você é um assistente dedicado apenas à consulta de recursos de GPU.
+6. Para solicitações relacionadas a GPUs que o sistema não suporta (por exemplo, reservas futuras, agendamentos ou preços), diga claramente que o sistema não possui essa informação ou funcionalidade.
+7. Responda sempre em linguagem natural voltada ao usuário final: NÃO mencione nomes de ferramentas/funções, parâmetros, campos JSON (como `found: false`, `ambiguous`, etc.) ou detalhes internos da consulta.
 """
 
 TOOL_DEFINITIONS: tuple[dict[str, Any], ...] = (
